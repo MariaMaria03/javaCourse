@@ -1,13 +1,12 @@
 package javalab1;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 public class Bag extends Container {
-    private int maxWeight = 12000;
+    private int maxWeight = 10000;
     
     public Bag(String n, int w, String ... props) {
         super(n, w, props);
@@ -15,14 +14,14 @@ public class Bag extends Container {
     }
    
     @Override
-    public void addItem(Item elem) throws OverFlowException, AlreadyPlacedException {
+    public void addItem(Item elem) throws ItemsException, AlreadyPlacedException {
         if ((currentWeight + elem.getWeight()) > maxWeight) {
             String messageError = "Мешок не выдержит, вес превышает допустимую норму,"
                                 + "предмет " + elem.getName() + " не попадёт в мешок";
-            throw new OverFlowException(messageError);
+            throw new ItemsException(messageError);
         }
-            currentWeight += elem.getWeight();
-            super.addItem(elem);
+        currentWeight += elem.getWeight();
+        super.addItem(elem);
         
         System.out.println("Текущий вес мешка: " + currentWeight);
     }
@@ -42,7 +41,7 @@ public class Bag extends Container {
             //iter.remove();
             currentWeight -= elem.getWeight();
             System.out.println("Из мешка вытащили предмет: " + elem.getName());
-            elem.locationContainer();
+            elem.itemFromContainer();
             containerList.remove(elem);      
         }
     }

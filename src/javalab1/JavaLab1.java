@@ -56,7 +56,7 @@ public class JavaLab1 {
             Item book3 = new Item("книжка3", 500, "плоский", "оранжевая");
             Item ball2 = new Item("мяч 2", 500, "круглый", "оранжевый");
             Item dictionary = new Item("словарь", 1000, "плоский", "серый");
-            //pile.addItem(book2);
+            pile.addItem(book2);
             pile.pullItem();
             pile.showAll();
 
@@ -65,24 +65,29 @@ public class JavaLab1 {
             bagNew.showAll();
 
             Box newBox = new Box("коробка", 200, "картонная");
-            newBox.addItem(book2, 1);
-            newBox.addItem(card, 1);
+            //newBox.addItem(book2, 1);
+            //newBox.addItem(card, 1);
             newBox.addItem(folder, 1);
+            //newBox.addItem(newBox);
+            pile.addItem(bagNew);
+            bagNew.addItem(newBox);
+            
+            newBox.showAll();
             //newBox.addItem(book3, 1);
             //newBox.addItem(book, 2);
-            newBox.addItem(dictionary, 2);
-            newBox.addItem(ball2, 2);
-            newBox.showAll();
-            newBox.pullItem(1);
-            newBox.showAll();
-            newBox.pullItem(2);
-            newBox.addItem(book3, 1);
-            newBox.showAll();
-            System.out.println(newBox.currentWeight);
-            System.out.println(dictionary.getInContainer());
+//            newBox.addItem(dictionary, 2);
+//            newBox.addItem(ball2, 2);
+//            newBox.showAll();
+//            newBox.pullItem(1);
+//            newBox.showAll();
+//            newBox.pullItem(2);
+//            newBox.addItem(book3, 1);
+//            newBox.showAll();
+//            System.out.println(newBox.currentWeight);
+//            System.out.println(dictionary.getInContainer());
             
         }
-        catch (OverFlowException | AlreadyPlacedException e) {
+        catch (ItemsException | AlreadyPlacedException e) {
             System.out.println(e);
         }
     }   

@@ -11,24 +11,23 @@ public class Box extends Container {
     private final int maxCount = 3;
     // map заменить на list
     ArrayList<ArrayList> piles = new ArrayList<ArrayList>();
-    //Map<Integer, List> piles = new HashMap<Integer, List>();
     
     public Box(String n, int w, String ... props) {
         super(n, w, props);
         
-        // Создаем в коробке максимум пустых стопок
+        // Создаем в коробке максимум возможных пустых стопок
         for (int i = 0; i < maxPile; i++) {
             ArrayList<Item> pileColl = new ArrayList<Item>();
             piles.add(pileColl);
         }
     }
    
-    public void addItem(Item elem, int numP) throws OverFlowException, AlreadyPlacedException {
+    public void addItem(Item elem, int numP) throws ItemsException, AlreadyPlacedException {
         if (numP > maxPile) {
             System.out.println("Максимальное количество стопок: " + maxPile);
         }
         else if ((piles.get(numP)).size() > maxCount) {
-            throw new OverFlowException("В коробку в стопку №" + numP + " больше складывать нельзя");
+            throw new ItemsException("В коробку в стопку №" + numP + " больше складывать нельзя");
         }
         else if (elem.getInContainer()) {
             throw new AlreadyPlacedException(itemAlreadyPlaced(elem));
@@ -36,34 +35,15 @@ public class Box extends Container {
         else {
             putInBox(elem, numP);
         }
-//        else if (piles.isEmpty() || piles.get(numP) == null ||
-//                            (piles.get(numP)).size() < maxCount) {
-//            putInBox(elem, numP); 
-//        }
-//        else if (elem.getInContainer()) {
-//            throw new AlreadyPlacedException(itemAlreadyPlaced(elem));
-//        }
-//        else {
-//            throw new OverFlowException("В коробку в стопку №" + numP + " больше складывать нельзя");
-//        }
     }
     
-    private void putInBox(Item elem, int numP) {
-        if (isFlat(elem)) {
-//            if (piles.get(numP) == null) {
-//                ArrayList<Item> pileColl = new ArrayList<Item>();
-//                pileColl.add(elem);
-//            }
-                //piles.get(numP).add(pileColl);
-            piles.get(numP).add(elem);
-            currentWeight += elem.getWeight();
-            elem.locationContainer();
+    private void putInBox(Item elem, int numP) throws ItemsException {
+        if (!isFlat(elem)) {
+            throw new ItemsException(itemNotFlat(elem));
         }
-        else {
-            System.out.println("Предмет " + elem.getName() +
-                                    " не плоский, в стопку помещать нельзя");
-        }
-        
+        piles.get(numP).add(elem);
+        currentWeight += elem.getWeight();
+        elem.itemToContainer();
     }
     
     public void pullItem(int numP) {
@@ -71,7 +51,7 @@ public class Box extends Container {
         pileColl = piles.get(numP);
         final int n = piles.get(numP).size();
         final Item lastElem = pileColl.get(n - 1);
-        this.fromContainer(lastElem); 
+        lastElem.itemFromContainer();
         currentWeight -= lastElem.getWeight(); 
         piles.get(numP).remove(n - 1); 
     }

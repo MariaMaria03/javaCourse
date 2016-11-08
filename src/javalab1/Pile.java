@@ -14,16 +14,15 @@ public class Pile extends Container {
     }
     
     @Override
-    public void addItem(Item elem) throws OverFlowException, AlreadyPlacedException {
+    public void addItem(Item elem) throws ItemsException, AlreadyPlacedException {
         if (isFlat(elem)) {
             if (containerList.size() > maxItems) {
-                throw new OverFlowException("В стопку больше складывать нельзя");
+                throw new ItemsException("В стопку больше складывать нельзя");
             }
             super.addItem(elem); 
         }
         else {
-            System.out.println("Предмет " + elem.getName() +
-                                " не плоский, в стопку помещать нельзя");
+            throw new ItemsException(itemNotFlat(elem));
         }
         System.out.println("Текущее количество предметов в стопке: " +
                                                     containerList.size());
@@ -38,7 +37,7 @@ public class Pile extends Container {
             int lastItem = containerList.size() - 1;
             Item item = ((List<Item>)containerList).get(lastItem);
             System.out.println("Из стопки вытащили " + item.getName());
-            item.locationContainer();
+            item.itemFromContainer();
             containerList.remove(item);
             return item;
         }

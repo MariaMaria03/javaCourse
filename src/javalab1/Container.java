@@ -1,25 +1,25 @@
 package javalab1;
 
 import java.util.Collection;
-import java.util.HashSet;
 
 abstract class Container extends Item {
-    
-    // коллекцию сделать
     public Collection<Item> containerList;
     public int currentWeight = 0;
 
     Container(String n, int w, String ... props) {
         super(n, w, props);
-        currentWeight = this.getWeight();
+        currentWeight = super.getWeight();
     }
 
-    public void addItem(Item elem) throws OverFlowException, AlreadyPlacedException {
-        containerList.add(elem);
+    public void addItem(Item elem) throws ItemsException, AlreadyPlacedException {
+        if (elem.getName() == this.getName()) {
+            throw new ItemsException("Ошибка! Предмет сам в себя класть нельзя");
+        }
         if (elem.getInContainer()) {
            throw new AlreadyPlacedException(itemAlreadyPlaced(elem)); 
         }
-        elem.locationContainer();
+        containerList.add(elem);
+        elem.itemToContainer();
     }
 
     public void showAll() {
@@ -34,13 +34,18 @@ abstract class Container extends Item {
     public boolean isFlat(Item elem) {
         return elem.getProps().contains("плоский");
     }
-
-    public void fromContainer(Item elem) {
-        elem.locationContainer();
+    
+    public String itemNotFlat(Item elem) {
+        return "Предмет " + elem.getName() + " не плоский, в стопку помещать нельзя";
     }
 
     public String itemAlreadyPlaced(Item elem) {
         return "Предмет '" + elem.getName() + "' уже лежит в другом контейнере";
+    }
+    
+    @Override
+    int getWeight() {
+        return this.currentWeight;
     }
 
     @Override

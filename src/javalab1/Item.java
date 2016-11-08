@@ -23,9 +23,13 @@ public class Item {
                " Другие свойства" + otherProps; 
     }
     
-    void locationContainer() {
-        inContainer = !this.inContainer;
+    void itemToContainer() {
+        inContainer = true;
     }
+    void itemFromContainer() {
+        inContainer = false;
+    }
+    
     boolean getInContainer() {return inContainer;}
     Set<String> getProps() {return otherProps;}
     public String getName() {return name;}
