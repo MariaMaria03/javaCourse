@@ -12,11 +12,11 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 
 public class NewEmptyJUnitTest {
-    Item book, mouse, hoover, book3, ball2, card;
+    Item book, mouse, hoover, book3, ball2, card, folder;
     Bag bagNew;
     Box newBox;
     Pile pile;
-    boolean overflowWeightContainer, alreadyPlaced, notFlat, sameItem;
+    boolean overflowWeightContainer, alreadyPlaced, notFlat, sameItem, parentItemPlaced;
     
     @Before public void initialize() {
         book = new Item("книга", 300, "плоский", "зеленая");
@@ -25,6 +25,7 @@ public class NewEmptyJUnitTest {
         book3 = new Item("книжка3", 500, "плоский", "оранжевая");
         ball2 = new Item("мяч 2", 500, "круглый", "оранжевый");
         card = new Item("открытка", 30, "плоский", "разноцветная");
+        folder = new Item("папка", 300, "плоский", "синяя");
         
         bagNew = new Bag("мешок", 400, "синий");
         newBox = new Box("коробка", 200, "картонная");
@@ -33,6 +34,7 @@ public class NewEmptyJUnitTest {
         alreadyPlaced = false;
         notFlat = false;
         sameItem = false;
+        parentItemPlaced = false;
     }
     
     @Test
@@ -45,8 +47,18 @@ public class NewEmptyJUnitTest {
         try {
             bagNew.addItem(book);
             bagNew.addItem(mouse);
-            bagNew.addItem(card);
-            assertEquals(1330, bagNew.currentWeight);
+            //bagNew.addItem(card);
+            newBox.addItem(card, 1);
+            // кладем в мешок коробку
+            bagNew.addItem(newBox);
+            assertEquals(1530, bagNew.currentWeight);
+            newBox.addItem(folder, 1);
+        }
+        catch (ItemsException | AlreadyPlacedException e) {
+            parentItemPlaced = true;
+            System.out.println(e);
+        }
+        try {
             bagNew.addItem(hoover);
         }
         catch (ItemsException | AlreadyPlacedException e) {
@@ -54,6 +66,7 @@ public class NewEmptyJUnitTest {
             System.out.println(e);
         }
         
+        assertTrue(parentItemPlaced);
         assertTrue(overflowWeightContainer);
     }
     

@@ -1,15 +1,11 @@
 package javalab1;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
 public class Box extends Container {
     private final int maxPile = 3;
     private final int maxCount = 3;
-    // map заменить на list
     ArrayList<ArrayList> piles = new ArrayList<ArrayList>();
     
     public Box(String n, int w, String ... props) {
@@ -20,13 +16,17 @@ public class Box extends Container {
             ArrayList<Item> pileColl = new ArrayList<Item>();
             piles.add(pileColl);
         }
+        containerList = new ArrayList<Item>();
     }
    
     public void addItem(Item elem, int numP) throws ItemsException, AlreadyPlacedException {
         if (numP > maxPile) {
             System.out.println("Максимальное количество стопок: " + maxPile);
         }
-        else if ((piles.get(numP)).size() > maxCount) {
+        if (this.getInContainer()) {
+            throw new ItemsException(parentItemPlaced(elem, this.getName()));
+        }
+        if ((piles.get(numP)).size() > maxCount) {
             throw new ItemsException("В коробку в стопку №" + numP + " больше складывать нельзя");
         }
         else if (elem.getInContainer()) {
@@ -42,6 +42,7 @@ public class Box extends Container {
             throw new ItemsException(itemNotFlat(elem));
         }
         piles.get(numP).add(elem);
+        containerList.add(elem);
         currentWeight += elem.getWeight();
         elem.itemToContainer();
     }
@@ -58,12 +59,15 @@ public class Box extends Container {
     
     @Override
     public void showAll() {
-        System.out.println("Все предметы в контейнере " + this.getName());
+        System.out.println("Все предметы в контейнере " + this.getName() + " по стопкам");
         for (int x = 1; x < piles.size(); x++) {
             ArrayList<Item> pileColl = new ArrayList<Item>();
             System.out.println("Стопка № " + x);
             pileColl = piles.get(x);
             pileColl.forEach(i -> System.out.println("Предмет: " + i.getName()));
         }
+        
+        // вывод предметов подряд
+        super.showAll();
     }   
 }

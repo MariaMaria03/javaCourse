@@ -45,7 +45,7 @@ public class JavaLab1 {
             Item ball = new Item("шар", 100, "круглый", "желтый");
             pile.showAll();
             //pile.addItem(book);
-            pile.addItem(ball);
+            //pile.addItem(ball);
             pile.showAll();
             Item folder = new Item("папка", 300, "плоский", "синяя");
             //pile.addItem(folder);
@@ -69,10 +69,11 @@ public class JavaLab1 {
             //newBox.addItem(card, 1);
             newBox.addItem(folder, 1);
             //newBox.addItem(newBox);
-            pile.addItem(bagNew);
+            //pile.addItem(bagNew);
             bagNew.addItem(newBox);
             
             newBox.showAll();
+            newBox.addItem(book3, 1);
             //newBox.addItem(book3, 1);
             //newBox.addItem(book, 2);
 //            newBox.addItem(dictionary, 2);

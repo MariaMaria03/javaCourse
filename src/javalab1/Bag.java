@@ -34,11 +34,6 @@ public class Bag extends Container {
             Random random = new Random();
             int deletingElem = random.nextInt(containerList.size());
             Item elem = ((List<Item>)containerList).get(deletingElem);
-//            Iterator iter = containerList.iterator();
-//            for (int i = 0; i < containerList.size(); i++ ) {
-//                iter.next();
-//            }
-            //iter.remove();
             currentWeight -= elem.getWeight();
             System.out.println("Из мешка вытащили предмет: " + elem.getName());
             elem.itemFromContainer();

@@ -12,8 +12,13 @@ abstract class Container extends Item {
     }
 
     public void addItem(Item elem) throws ItemsException, AlreadyPlacedException {
-        if (elem.getName() == this.getName()) {
+        String contName = this.getName();
+        
+        if (elem == this) {
             throw new ItemsException("Ошибка! Предмет сам в себя класть нельзя");
+        }
+        if (this.getInContainer()) {
+            throw new ItemsException(parentItemPlaced(elem, contName));
         }
         if (elem.getInContainer()) {
            throw new AlreadyPlacedException(itemAlreadyPlaced(elem)); 
@@ -41,6 +46,11 @@ abstract class Container extends Item {
 
     public String itemAlreadyPlaced(Item elem) {
         return "Предмет '" + elem.getName() + "' уже лежит в другом контейнере";
+    }
+    
+    public String parentItemPlaced(Item elem, String parentItem) {
+        return "Ошибка! Предмет " + elem.getName() + " нельзя поместить в контейнер '"
+                + parentItem + "', так как " + parentItem + " уже лежит в другом контейнере";
     }
     
     @Override
