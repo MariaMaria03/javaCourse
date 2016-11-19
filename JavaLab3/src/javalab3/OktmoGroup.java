@@ -22,6 +22,6 @@ public class OktmoGroup {
   
   @Override
   public String toString() {
-    return level + ", " + name;
+    return level + ", " + name + " " + code;
   }
 }

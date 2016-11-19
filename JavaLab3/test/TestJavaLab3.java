@@ -1,5 +1,5 @@
-import javalab2.OktmoData;
-import javalab2.OktmoReader;
+import javalab3.OktmoData;
+import javalab3.OktmoReader;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;

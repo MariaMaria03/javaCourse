@@ -10,6 +10,7 @@ public class OktmoData {
     public ArrayList<Place> placeList = new ArrayList<Place>();
     public HashSet<String> allStatuses = new HashSet<String>();
     public Map<Long, OktmoGroup> placesMap = new HashMap<Long, OktmoGroup>();
+    public Map<String, OktmoGroup> groupByName = new HashMap<String, OktmoGroup>();
     
     public boolean addPlace(long code, String name, String status) {
         allStatuses.add(status);
@@ -17,7 +18,9 @@ public class OktmoData {
     }
     
     public void addPlaceGroup(long code, String name, int level) {
-      placesMap.put(code, new OktmoGroup(name, code, level));
+      OktmoGroup oktmoG = new OktmoGroup(name, code, level);
+      placesMap.put(code, oktmoG);
+      groupByName.put(name, oktmoG);
   }
 
     public void printAll() {
