@@ -15,7 +15,7 @@ public class Visitor implements Runnable {
     num = totalCount + 1;
     totalCount += 1;
     Random random = new Random();
-    floor = random.nextInt(10);
+    floor = random.nextInt(10) + 2;
     place = pl;
   }
   
@@ -26,38 +26,41 @@ public class Visitor implements Runnable {
   
   public void run() {
     goUp();
-    goDown();
     doSomeWork();
-    goUp();
     goDown();
   }
   
   public void goUp() {
-    place.enterLift(this);
-    System.out.println("Посетитель " + num + " вошел в лифт, едет на " + floor + " этаж");
-    try {
-      Thread.sleep(floor * 100 + 200);
-    } catch (InterruptedException ex) {
-      Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
-    }
-    
+    goLift(floor, 1);
   }
   
   public void goDown() {
-    place.exitFromLift(this);
-    System.out.println("Посетитель " + num +  " вышел из лифта");
-    synchronized(place) {
-      place.notify();
-    }
+    goLift(1, floor);
   }
   
   public void doSomeWork() {
     System.out.println("Посетитель " + num + " делает дела");
     try {
-      Thread.sleep(floor * 100 + 1000);
+      Thread.sleep(5 * 100 + 1000);
+      System.out.println("Посетитель " + num + " закончил дела");
     } catch (InterruptedException ex) {
       Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
     }
-    System.out.println("Посетитель " + num + " закончил дела");
+  }
+  
+  public void goLift(int f, int curF) {
+    place.enterLift(this);
+    System.out.println("Посетитель вызывает лифт на этаж " + f);
+    place.moveLift(curF);
+    System.out.println("Посетитель " + num + " вошел в лифт, едет на " + f + " этаж");
+    place.moveLift(f);
+      //Thread.sleep(floor * 100 + 200);
+      place.exitFromLift(this);
+      System.out.println("Посетитель " + num + " вышел из лифта");
+      synchronized (place) {
+        place.notify();
+      }
   }
 }
+
+
