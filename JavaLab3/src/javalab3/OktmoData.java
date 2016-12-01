@@ -5,16 +5,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 public class OktmoData {
     public ArrayList<Place> placeList = new ArrayList<Place>();
+    public TreeMap<Long, Place> placesPMap = new TreeMap<>();
     public HashSet<String> allStatuses = new HashSet<String>();
-    public Map<Long, OktmoGroup> placesMap = new HashMap<Long, OktmoGroup>();
+    public TreeMap<Long, OktmoGroup> placesMap = new TreeMap<Long, OktmoGroup>();
     public Map<String, OktmoGroup> groupByName = new HashMap<String, OktmoGroup>();
     
     public boolean addPlace(long code, String name, String status) {
         allStatuses.add(status);
-        return placeList.add(new Place(code, name, status));
+        Place place = new Place(code, name, status);
+        placesPMap.put(code, place);
+        return placeList.add(place);
     }
     
     public void addPlaceGroup(long code, String name, int level) {

@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javafx.print.Collation;
+
 
 public class OktmoAnalyzer {
   OktmoData oktmo;
@@ -47,13 +49,11 @@ public class OktmoAnalyzer {
   public void findMostPopularPlaceName(String regionName) {
     OktmoGroup region = oktmo.groupByName.get(regionName);
     if (region != null) {
-      ArrayList<Place> placesRegion = (ArrayList<Place>)
-          oktmo.placeList.stream().filter((Place t) -> {
-            return t.code/1000000000 == region.code/1000000000;
-          }).collect(Collectors.toList());
+      SortedMap<Long, Place> placesRegion
+          = oktmo.placesPMap.subMap(region.code, region.code + 1000000000);
       
       HashMap<String, Long> countSamePlaces = new HashMap<String, Long>();
-      placesRegion.forEach((Place t) -> {
+      placesRegion.forEach((Long c, Place t) -> {
         if (countSamePlaces.get(t.name) != null) {
           long valueCurrent = countSamePlaces.get(t.name) + 1;
           countSamePlaces.put(t.name, valueCurrent);
@@ -71,31 +71,26 @@ public class OktmoAnalyzer {
       }).forEach((String t) -> {
         System.out.println(t + ", количество: " + popularNum);
       });
-      
      }
     else {
       System.err.println("Региона с именем: " + regionName + " нет. Попробуйте другой");
     }  
-    
   }
   
   public void countPlaceByRegion(String regionName) {
     OktmoGroup region = oktmo.groupByName.get(regionName);
     if (region != null) {
-      ArrayList<Place> placesRegion = (ArrayList<Place>) oktmo.placeList.stream().filter((Place t) -> {
-        return t.code / 1000000000 == region.code / 1000000000;
-      }).collect(Collectors.toList());
-
-      HashMap<String, Long> statusesCount = new HashMap<String, Long>();
+      SortedMap<Long, Place> placesRegion =
+          oktmo.placesPMap.subMap(region.code, region.code + 1000000000);
+      HashMap<String, Long> statusesCount = new HashMap<>();
       
-      placesRegion.forEach((Place t) -> {
+      placesRegion.forEach((Long c, Place t) -> {
         if (statusesCount.get(t.status) != null) {
           statusesCount.put(t.status, statusesCount.get(t.status) + 1);
         }
         else {
           statusesCount.put(t.status, 1l);
         }
-        
       });
       System.out.println("Статусы региона: " + regionName);
       statusesCount.forEach((String t, Long u) -> {
@@ -106,13 +101,12 @@ public class OktmoAnalyzer {
       System.err.println("Региона с именем: " + regionName + " нет. Попробуйте другой");
     }
     
-    
   }
   
   public void countPlaceByRegionShort(String regionName) {
     OktmoGroup region = oktmo.groupByName.get(regionName);
     if (region != null) {
-      HashMap<String, Long> statusesCount = new HashMap<String, Long>();
+      HashMap<String, Long> statusesCount = new HashMap<>();
       oktmo.placeList.forEach((Place t) -> {
         if (t.code / 1000000000 == region.code / 1000000000) {
           if (statusesCount.get(t.status) != null) {
