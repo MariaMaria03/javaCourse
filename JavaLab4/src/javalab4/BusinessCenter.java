@@ -6,38 +6,47 @@ import java.util.logging.Logger;
 public class BusinessCenter {
   private boolean liftFree, controlFree;
   private int liftFloor;
+  public static long startTime;
   
   public BusinessCenter() {
     liftFree = true;
     controlFree = true;
     liftFloor = 1;
+    startTime = System.currentTimeMillis();
   }
   
-  public void enterLift(Visitor v) {
+  public boolean enterLift(Visitor v) {
     synchronized(this) {
       while (!liftFree) {
         try {
-          System.out.println("Посетитель" + v.getNum() + "ждет");
-          this.wait();
+          System.out.println(getTime() + "Посетитель " + v.getNum() + " ждет лифта");
+            this.wait(1000);        
+            return false;
         }
         catch(InterruptedException ex) { 
           
         }
       }
       liftFree = false;
+      return true;
     }
     
   }
   
   public void exitFromLift(Visitor v) {
     liftFree = true;
-    
+    System.out.println(getTime() + "Посетитель " + v.getNum() + " вышел из лифта");
   }
   
-  public void moveLift(int targetFloor) {
+  public void moveLift(int targetFloor, boolean isEmpty) {
     try {
-      System.out.println("Лифт едет на " + targetFloor + " этаж");
-      Thread.sleep(Math.abs(targetFloor - liftFloor) * 100 + 1000);
+      if (isEmpty) {
+        System.out.println(getTime() + "Пустой лифт едет на " + targetFloor + " этаж");
+      }
+      else {
+        System.out.println(getTime() + "Лифт с посетителем едет на " + targetFloor + " этаж");
+      }
+      Thread.sleep(Math.abs(targetFloor - liftFloor) * 100 + 400);
       liftFloor = targetFloor;
     } catch (InterruptedException ex) {
       Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
@@ -45,11 +54,25 @@ public class BusinessCenter {
   }
   
   public void enterControl(Visitor v) {
+    synchronized (this) {
+      while (!controlFree) {
+        try {
+          this.wait();
+        } catch (InterruptedException ex) {
 
+        }
+      }
+      controlFree = false;
+    }
   }
   
   public void exitFromControl(Visitor v) {
-    
+    controlFree = true;
+    System.out.println(getTime() + "Посетитель " + v.getNum() + " показал документы");
+  }
+  
+  public String getTime() {
+    return (System.currentTimeMillis() - startTime) + "ms: ";
   }
 
 }
