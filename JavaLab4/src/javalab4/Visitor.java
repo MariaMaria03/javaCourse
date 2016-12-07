@@ -5,26 +5,28 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Visitor implements Runnable {
-  private BusinessCenter place;
+  private BusinessCenter control;
+  private BusinessCenter lift;
   private int num = 0;
   private int floor;
   private static int totalCount;
-
   
-  public Visitor(BusinessCenter pl) {
+  public Visitor(BusinessCenter c, BusinessCenter l) {
     num = totalCount + 1;
-    totalCount += 1;
+    totalCount++;
     Random random = new Random();
     floor = random.nextInt(10) + 2;
-    place = pl;
+    control = c;
+    lift = l;
   }
   
   public int getNum() {
    return num;
 }
   
-  
   public void run() {
+    System.out.println(lift.getTime() + "Посетитель " + num + " пришёл");
+    passControl();
     goUp();
     doSomeWork();
     goDown();
@@ -39,28 +41,51 @@ public class Visitor implements Runnable {
   }
   
   public void doSomeWork() {
-    System.out.println("Посетитель " + num + " делает дела");
+    System.out.println(lift.getTime() + "Посетитель " + num + " делает дела");
     try {
-      Thread.sleep(5 * 100 + 1000);
-      System.out.println("Посетитель " + num + " закончил дела");
+      Thread.sleep(2000);
+      System.out.println(lift.getTime() + "Посетитель " + num + " закончил дела");
     } catch (InterruptedException ex) {
       Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
   
   public void goLift(int f, int curF) {
-    place.enterLift(this);
-    System.out.println("Посетитель вызывает лифт на этаж " + f);
-    place.moveLift(curF);
-    System.out.println("Посетитель " + num + " вошел в лифт, едет на " + f + " этаж");
-    place.moveLift(f);
-      //Thread.sleep(floor * 100 + 200);
-      place.exitFromLift(this);
-      System.out.println("Посетитель " + num + " вышел из лифта");
-      synchronized (place) {
-        place.notify();
-      }
+     if (lift.enterLift(this)) { 
+       System.out.println(lift.getTime() + "Посетитель " + num + " вызывает лифт ");
+       lift.moveLift(curF, true);
+       System.out.println(lift.getTime() + "Посетитель " + num + " вошел в лифт, едет на " + f + " этаж");
+       lift.moveLift(f, false);
+       lift.exitFromLift(this);
+       synchronized (lift) {
+         lift.notify();
+       }
+     }
+     else {
+       System.out.println(lift.getTime() + "Посетитель " + num + " идет пешком на " + f + " этаж");
+       try {
+         Thread.sleep(f * 100 + 500);
+       } catch (InterruptedException ex) {
+         Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
+       }
+     }
+    
+    
   }
+  
+  public void passControl() {
+    control.enterControl(this);
+    try {
+      System.out.println(lift.getTime() + "Посетитель " + num + " показывает документы");
+      Thread.sleep(500);
+    } catch (InterruptedException ex) {
+      Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    control.exitFromControl(this);
+    synchronized (control) {
+      control.notify();
+    }
+  } 
 }
 
 
