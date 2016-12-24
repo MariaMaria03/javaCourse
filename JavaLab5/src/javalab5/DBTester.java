@@ -1,5 +1,11 @@
 package javalab5;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,10 +13,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.input.KeyCode;
 
 public class DBTester {
 
@@ -35,11 +50,6 @@ public class DBTester {
     //  jdbc - url:
     String dbUrl = "jdbc:derby://localhost:1527/groupdb";
 
-    Properties connInfo = new Properties();
-    connInfo.put("javaclient", "app");
-    // connInfo.put("schema", "APP");
-    connInfo.put("java", "app");
-
     Connection conn = null;
     conn = DriverManager.getConnection(dbUrl, "javaclient", "java");
     return conn;
@@ -56,6 +66,7 @@ public class DBTester {
       viewItems(conn);
       doWork(conn);
       viewItems(conn);
+      viewGroups(conn);
     } catch (SQLException ex) {
       System.out.println(ex.getMessage());
     }
@@ -80,21 +91,33 @@ public class DBTester {
       System.out.println("ID группы " + groupName + " : " + groupId);
     }
     
+    changeItemFromFile("items.txt", conn);
+    changeGroupFromFile("groups.txt", conn);
     viewItemsInGroup(conn, 3);
+    viewItemsInGroup(conn, groupName);
     viewItemsInGroupByName(conn, groupName);
-    addItemToGroup(conn, "Ветров К.А.", groupName);
+    if (addItemToGroup(conn, "Чистяков В.Р.", "Сборная России по борьбе")) {
+      System.out.println("Запись добавлена");
+    }
+    else {
+      System.out.println("Запись не добавлена. Уже есть или указанной группы не существует");
+    }
+    if (removeItemFromGroup(conn, "Георгиев А.Т.", "Сборная России по борьбе")) {
+      System.out.println("Запись удалена");
+    } else {
+      System.out.println("Запись не удалена или ее не существует");
+    }
     
   }
   
-  private void viewGroups(Connection conn) throws SQLException {
+  private HashSet<String> viewGroups(Connection conn) throws SQLException {
     Statement stmt = conn.createStatement();
     ResultSet rst = null;
-    
+    HashSet<String> res = new HashSet<String>();
     try {
       final String sql_groups = "SELECT * FROM ITEMGROUP ";
       rst = stmt.executeQuery(sql_groups);
 
-      //System.out.println("rst= " + rst.toString());
       ResultSetMetaData meta = rst.getMetaData();
       System.out.println("Таблица " + meta.getTableName(1));
       System.out.printf("headers %10s | %30s\n", meta.getColumnName(1),
@@ -108,8 +131,10 @@ public class DBTester {
         id = rst.getInt(1);
         title = rst.getString("TITLE");
         System.out.printf("%10d | %30s\n", id, title);
+        res.add(title);
       }
       stmt.close();
+      return res;
     }
     catch (SQLException ex) {
       System.out.println(ex.getMessage());
@@ -121,6 +146,7 @@ public class DBTester {
       } catch (SQLException ex) {
         logger.log(Level.SEVERE, null, ex);
       }
+      return res;
     }
   }
   
@@ -148,24 +174,19 @@ public class DBTester {
         groupName = rst.getString("GROUP_TITLE");
         System.out.printf("%30s | %30s\n", name, groupName);
       }
-      stmt.close();
     } catch (SQLException ex) {
       System.out.println(ex.getMessage());
     } finally {
-      try {
         if (rst != null) {
           rst.close();
         }
         if (stmt != null) {
           stmt.close();
         }
-      } catch (SQLException ex) {
-        logger.log(Level.SEVERE, null, ex);
-      }
-    }
+      } 
   }
   
-  private int getGroupID(String name, Connection conn) {
+  private int getGroupID(String name, Connection conn) throws SQLException {
     PreparedStatement stmt = null;
     ResultSet rst = null;
     int id = -1;
@@ -179,23 +200,16 @@ public class DBTester {
       if (rst.next()) {
         id = rst.getInt(1);
       }
-      stmt.close();
-    }
-    catch (SQLException ex) {
-      System.out.println(ex.getMessage());
     }
     finally {
-      try {
         if (rst != null) rst.close();
         if (stmt != null) stmt.close();
-      }
-      catch (SQLException ex) {
-        logger.log(Level.SEVERE, null, ex);
-      }
     }
     return id;
   }
   
+  
+  // Просмотр всех элементов группы по ID группы
   private void viewItemsInGroup(Connection conn, int groupid) {
     PreparedStatement stmt = null;
     ResultSet rst = null;
@@ -226,8 +240,6 @@ public class DBTester {
       else {
         System.out.println("Элементов нет");
       }
-      
-      stmt.close();
     }
     catch (SQLException ex) {
       System.out.println(ex.getMessage());
@@ -243,6 +255,13 @@ public class DBTester {
     }
   }
   
+  // Просмотр элементов группы по имени группы: 1 вариант - без join'а
+  private void viewItemsInGroup(Connection conn, String groupName) throws SQLException {
+    int groupId = getGroupID(groupName, conn);
+    viewItemsInGroup(conn, groupId);
+  }
+  
+  // Просмотр элементов группы по имени группы: 2 вариант - c join'ом
   private void viewItemsInGroupByName(Connection conn, String groupName) {
     PreparedStatement stmt = null;
     ResultSet rst = null;
@@ -295,23 +314,77 @@ public class DBTester {
     }
   }
   
+  // Проверяем существует ли таблица
+  private boolean isExistTable(Connection conn, String query) throws SQLException {
+    Statement stmt = conn.createStatement();
+    try {
+      stmt.execute(query);
+    } catch (SQLException ex) {
+      return false;
+    }
+    return true;
+  }
+  
+  // Добавляем данные в таблицу Item
+  private void insertDataItem(Connection conn) throws SQLException {
+    String sqlInsertItem = "INSERT INTO ITEM(NAME_FULL,GROUPID) VALUES(?,?)";
+    String nI[] = {"Быстрова Т.А.", "Кротов П.Р.", "Самсонова Р.Р.", "Петров В.Р.",
+      "Федорова Л.Д.", "Султанов Г.Ш.", "Антипова М.И.", "Никитин Д.С."};
+    Integer groupItems[] = {1, 3, 2, 2, 1, 1, 3, 3};
+    PreparedStatement stmtCreate = conn.prepareStatement(sqlInsertItem);
+    for (int i = 0; i < nI.length; i++) {
+      stmtCreate.setString(1, nI[i]);
+      stmtCreate.setInt(2, groupItems[i]);
+      stmtCreate.executeUpdate();
+    }
+  }
+  
   private void createTablesIfNeeded(Connection conn) throws SQLException {
     Statement stmt = conn.createStatement();
-    ResultSet rst = null;
+    PreparedStatement stmtCreate = null;
+    boolean isItemExist = isExistTable(conn, "SELECT * FROM ITEM ");
+    final String sqlGroups = "CREATE TABLE ITEMGROUP "
+        + "(ID INTEGER PRIMARY KEY generated always as identity,"
+        + " TITLE VARCHAR(100) UNIQUE NOT NULL) ";
+    final String sqlItems = " CREATE TABLE ITEM (ID INTEGER PRIMARY KEY generated always as identity, "
+        + " NAME_FULL VARCHAR(100) UNIQUE NOT NULL, GROUPID INTEGER,"
+        + " FOREIGN KEY (GROUPID) REFERENCES ITEMGROUP(ID) ON DELETE CASCADE)";
+    String titleGr[] = {"Сборная России по биатлону", "Сборная России по баскетболу",
+                        "Сборная России по борьбе"};
+    String sqlInsertGroup = "INSERT INTO ITEMGROUP(TITLE) VALUES(?)";
 
-    try {
-      final String sql_groups = "SELECT * FROM ITEMS ";
-      System.out.println(stmt.execute(sql_groups));
-      //ResultSetMetaData meta = rst.getMetaData();
-      System.out.println("Таблиfgdfца ");
+    try {      
+      if (isExistTable(conn, "SELECT * FROM ITEMGROUP ")) {
+        System.out.println("Таблица ITEMGROUP уже существует");
+      }
+      else {
+        if (isItemExist) stmt.executeUpdate(" DROP TABLE ITEM");
+        stmt.executeUpdate(sqlGroups);
+        stmt.executeUpdate(sqlItems);
+        System.out.println("Создали таблицы: ITEM, ITEMGROUP");
+        stmtCreate = conn.prepareStatement(sqlInsertGroup);
+        for (int i = 0; i < titleGr.length; i++) {
+          stmtCreate.setString(1, titleGr[i]);
+          stmtCreate.executeUpdate();
+        }
+        insertDataItem(conn);
+      }
+      if (isItemExist) {
+        System.out.println("Таблица ITEM уже существует");
+      }
+      else {
+        stmt.executeUpdate(sqlItems);
+        System.out.println("Создали таблицу ITEM");
+        insertDataItem(conn);
+      }
     }
     catch (SQLException ex) {
       System.out.println(ex.getMessage());
     }
     finally {
       try {
-        if (rst != null) rst.close();
         if (stmt != null) stmt.close();
+        if (stmtCreate != null) stmtCreate.close();
       }
       catch (SQLException ex) {
         logger.log(Level.SEVERE, null, ex);
@@ -320,34 +393,178 @@ public class DBTester {
     
   }
   
-  private boolean addItemToGroup(Connection conn, String itemName, String groupName) {
+  private boolean addItemToGroup(Connection conn, String itemName, String groupName) throws SQLException {
+    String sqlItem = "INSERT INTO ITEM(NAME_FULL,GROUPID) VALUES(?,?)";
+    return changeItem(conn, itemName, groupName, sqlItem);
+  }
+  
+  private boolean removeItemFromGroup(Connection conn, String itemName, String groupName) throws SQLException {
+    String sqlItem = "DELETE FROM ITEM WHERE NAME_FULL=? AND GROUPID=?";
+    return changeItem(conn, itemName, groupName, sqlItem);
+  }
+  
+  // Выполняем запрос - добавление или удаление элемента
+  private boolean changeItem(Connection conn, String itemName, String groupName, String query) throws SQLException {
     int groupId = getGroupID(groupName, conn);
-    PreparedStatement stmt = null;
-    ResultSet rst = null;
-    
-    try {
-      conn.setAutoCommit(false);
-      final String sqlItem = "INSERT INTO ITEM(NAME_FULL,GROUPID) VALUES(?,?)";
-      stmt = conn.prepareStatement(sqlItem);
+     //stmt = null;
+
+    try (PreparedStatement stmt = conn.prepareStatement(query)){
       stmt.setString(1, itemName);
       stmt.setInt(2, groupId);
       stmt.executeUpdate();
-      conn.commit();
-      
-    }
-    catch (SQLException ex) {
-      System.out.println(ex.getMessage());
-    }
-    finally {
+    } catch (SQLException ex) {
+      return false;
+    } 
+    return true;
+  }
+  
+  // Считываем строчки про Items  из файла - проводим общую транзакцию
+  private void changeItemFromFile(String fileName, Connection conn) throws SQLException {
+    BufferedReader br = null;
+    int lineCount = 0;
+    try {
+      br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), "cp1251"));
+      String s;
+      boolean needCommit = true;
+      conn.setAutoCommit(false);
+      while ((s = br.readLine()) != null) {
+        lineCount++;
+        String[] itemGroupInfo = s.split("\t");
+        if ("+".equals(itemGroupInfo[0])) {
+          if (!addItemToGroup(conn, itemGroupInfo[1], itemGroupInfo[2])) {
+            needCommit = false;
+            break;
+          }
+        }
+        else {
+          if (!removeItemFromGroup(conn, itemGroupInfo[1], itemGroupInfo[2])) {
+            needCommit = false;
+            break;
+          }
+        }
+      }
+      if (needCommit) {
+        conn.commit();
+        System.out.println("Строчки из файла items.txt добавились");
+      }
+      else {
+        conn.rollback();
+        System.err.println("Строчки из файла items.txt не добавились");
+      }
+      conn.setAutoCommit(true);
+
+    } catch (IOException ex) {
+      System.out.println("Reading error in line " + lineCount);
+      ex.printStackTrace();
+    } finally {
       try {
+        br.close();
+      } catch (IOException ex) {
+        System.out.println("Can not close");
+      }
+    }
+  }
+  
+  // Считываем строчки про Group из файла - проводим общую транзакцию
+  private void changeGroupFromFile(String fileName, Connection conn) throws SQLException {
+    BufferedReader br = null;
+    int lineCount = 0;
+    PreparedStatement stmt = null;
+    ResultSet rst = null;
+    Set<String> addGroup = new HashSet<>();
+    Set<String> removeGroup = new HashSet<>();
+    try {
+      try {
+        br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), "cp1251"));
+        String s;
+        conn.setAutoCommit(false);
+        while ((s = br.readLine()) != null) {
+          lineCount++;
+          String[] groupInfo = s.split("\t");
+          if ("+".equals(groupInfo[0])) {
+            addGroup.add(groupInfo[1]);
+          } else {
+            removeGroup.add(groupInfo[1]);
+          }
+        }
+      } catch (IOException ex) {
+        Logger.getLogger(DBTester.class.getName()).log(Level.SEVERE, null, ex);
+      } finally {
+        try {
+          br.close();
+        } catch (IOException ex) {
+          System.out.println("Can not close");
+        }
+      }
+      
+      String getGroups = "SELECT TITLE FROM ITEMGROUP";
+      stmt = conn.prepareStatement(
+          getGroups,
+          ResultSet.TYPE_SCROLL_INSENSITIVE,
+          ResultSet.CONCUR_UPDATABLE);
+      rst = stmt.executeQuery();
+      
+      while (rst.next()) {
+        String title = rst.getString(1);
+        if (removeGroup.contains(title)) {
+          rst.deleteRow();
+        }
+        if (addGroup.contains(title)) {
+          addGroup.remove(title);
+        }
+        
+      }
+      rst.moveToInsertRow();
+      for (String gr : addGroup) {
+          rst.updateString("TITLE", gr);
+          rst.insertRow();
+      }
+      
+//      HashSet<String> groups = viewGroups(conn);
+//
+//      Iterator<String> iterAddGroups = addGroup.iterator();
+//      while (iterAddGroups.hasNext()) {
+//        String group = iterAddGroups.next();
+//        if(groups.contains(group)) {
+//          addGroup.remove(group);
+//        }
+//      }
+     // addGroup.removeAll(groups);
+//      Iterator<String> iterRemoveGroups = removeGroup.iterator();
+//      while (iterRemoveGroups.hasNext()) {
+//        String group = iterRemoveGroups.next();
+//        if (!groups.contains(group)) {
+//          removeGroup.remove(group);
+//        }
+//      }
+//
+//      String sqlInsertGroup = "INSERT INTO ITEMGROUP(TITLE) VALUES(?)";
+//      stmt = conn.prepareStatement(sqlInsertGroup);
+//      for (String gr : addGroup) {
+//        stmt.setString(1, gr);
+//        stmt.executeUpdate();
+//      }
+//      String sqlDeleteGroup = "DELETE FROM ITEMGROUP WHERE TITLE=?";
+//      stmt = conn.prepareStatement(sqlDeleteGroup);
+//      for (String gr : removeGroup) {
+//        stmt.setString(1, gr);
+//        stmt.executeUpdate();
+//      }
+      conn.commit();
+      System.out.println("Group change");
+
+    } catch (SQLException ex) {
+      conn.rollback();
+      System.err.println("Group not change");
+    } finally {
+      try {
+        conn.setAutoCommit(true);
         if (rst != null) rst.close();
         if (stmt != null) stmt.close();
       } catch (SQLException ex) {
-        logger.log(Level.SEVERE, null, ex);
+        System.err.println(ex.getMessage());
       }
     }
-    
-    return true;
   }
   
 }
