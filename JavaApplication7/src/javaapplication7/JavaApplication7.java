@@ -1,5 +1,6 @@
 package javaapplication7;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -8,7 +9,14 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -24,9 +32,11 @@ public class JavaApplication7 {
   /**
    * @param args the command line arguments
    */
-  public static void main(String[] args) throws SAXException {
-    Document doc = readXmlToDOMDocument("clouds.svg");
-    processDocument(doc);
+  public static void main(String[] args) throws SAXException, IOException {
+    //Document doc = readXmlToDOMDocument("clouds.svg");
+    //processDocument(doc);
+    //saveDemo(doc);
+    new SaxProcess().process("UfaCenterSmall.xml", "osm.xsd");
   }
   
   JavaApplication7(String fileName) throws SAXException {
@@ -38,15 +48,9 @@ public class JavaApplication7 {
     //  используется шаблон проектирования "Абстрактная фабрика"
     //  DocumentBuilderFactory.newInstance() порождает объект класса-наследникв
     //  от абстрактного класса DocumentBuilderFactory
-    //  Объект какого типа будет порожден, зависит от конфигурации JDK
-    //  Сейчас используется парсер Xerces и класс
-    //     com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl
     System.out.println("DocumentBuilderFactory dbf = " + dbf);
 
     dbf.setNamespaceAware(false); // не поддерживать пространства имен
-    // dbf.setValidating(true) - DTD проверка
-    //dbf.setCoalescing(true) - склеивать CDATA с ближайшим текстовым блоком
-    // dbf.setSchema( );// XML-схема или альтернативные вариантыи
     dbf.setIgnoringElementContentWhitespace(true);
     
     DocumentBuilder db = null;
@@ -57,7 +61,6 @@ public class JavaApplication7 {
       return null;
     }
     try {
-      // собственно читаем документ - ВЕСЬ СРАЗУ В ПАМЯТЬ!
       return db.parse(fileName);
     } catch (IOException ex) {
       Logger.getLogger(JavaApplication7.class.getName()).log(Level.SEVERE, null, ex);
@@ -68,33 +71,37 @@ public class JavaApplication7 {
   private static void processDocument(Document doc) {
     Node n = doc.getDocumentElement();
     lookAttrs(n);
-    lookChildren(n, 0);
+    lookChildren(n, 0, doc);
   }
 
-  private static void lookChildren(Node n, int level) {
+  private static void lookChildren(Node n, int level, Document doc) {
     NodeList nl = n.getChildNodes();
     String space = "                                         ".substring(0, level);
     int num = nl.getLength();
     Node curNode;
     for (int i = 0; i < num; i++) {
-
       curNode = nl.item(i);
-
-      // curNode.getNodeValue() -- значение, существует для типов
-      // ATTRIBUTE, COMMENT, CDATA, TEXT
-      // curNode.getNodeName() -- имя тега для ELEMENT
-      // "#text" - для TEXT, "#cdata-section", "#comment","#document"
-      // "#document-fragment"
-      //System.out.printf("%s---%s\n",curNode.getNodeName(),curNode.getNodeValue());
-      // в зависимости от типа элемента...
       if (curNode.getNodeType() == Node.ELEMENT_NODE) {
-        
-          //((Element) curNode).setAttribute("a", "777"); // заменяем атрибут
-          System.out.printf(space + "ELEMENT: <%s>\n", curNode.getNodeName());
-          // читаем атрибуты
-          lookAttrs(curNode);
-          // рекурсивно просматриемм вложенные узлы
-          lookChildren(curNode, level + 1);
+        String curNodeName = curNode.getNodeName();
+          switch (curNodeName) {
+              case "rect":
+                System.out.printf(space + "ELEMENT: <%s>\n", curNodeName);
+                lookAttrs(curNode);
+                ((Element) curNode).setAttribute("style", "fill: green");
+                break;
+              case "circle":
+                System.out.printf(space + "ELEMENT: <%s>\n", curNodeName);
+                lookAttrs(curNode);
+                Element newCircle = doc.createElement("circle");
+                newCircle.setAttribute("style", "fill: red");
+                curNode.getParentNode().insertBefore(newCircle, curNode);
+                i++;
+                break;
+              case "path":
+                ((Element) curNode).setAttribute("style", "fill: silver");
+                break;
+          }
+          lookChildren(curNode, level + 1, doc);
       }
     }
   }
@@ -119,7 +126,26 @@ public class JavaApplication7 {
     System.out.printf("]\n");
   }
   
-  
+  private static void saveDemo(Document doc) throws IOException {
+    Result sr = new StreamResult(new FileWriter("figuresNew.xml"));
+    Result sr2 = new StreamResult(System.out);
+    DOMSource domSource = new DOMSource(doc);
+
+    Transformer tr;
+    try {
+      tr = TransformerFactory.newInstance().newTransformer();
+
+      // настройки "преобразования"
+      tr.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+      tr.setOutputProperty(OutputKeys.INDENT, "yes");
+
+      tr.transform(domSource, sr); // в файл
+      tr.transform(domSource, sr2); // на экран
+    }
+    catch (TransformerException ex) {
+      Logger.getLogger(JavaApplication7.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
   
   
 }
