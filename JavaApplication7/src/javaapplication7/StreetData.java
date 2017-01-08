@@ -8,5 +8,9 @@ public class StreetData {
     countPiece = cP;
   }
   
+  @Override
+  public String toString() {
+    return "Количество домов: " + countHouse + " ; Количество кусков: " + countPiece; 
+  }
   
 }
