@@ -37,14 +37,17 @@ public class XmlHandler implements ContentHandler {
       System.out.println(name);
     });
     
+    streetHouses.forEach((nameStr, obj) -> {
+      System.out.println(nameStr + " - " + obj.toString());
+    });
+    
   }
 
   public void startElement(String uri, String localName, String qName, Attributes atts)
       throws SAXException {
-//     System.out.printf("[L%d]Start element <%s> uri=%s, localname=%s\n",
-//        loc.getLineNumber(), qName, uri, localName);
     int countHouse = 0;
     int countRepeat = 0;
+    String streetRepeat = "";
     int n = atts.getLength();
 
     if (qName.equals("tag")) {
@@ -57,26 +60,38 @@ public class XmlHandler implements ContentHandler {
           else if ("highway".equals(atts.getValue(i)) && isWay) {
             isHighway = true;
           }
-          else if (isHighway && isWay) {
-            System.out.println(atts.getValue(i));
+          else if (isHighway && isWay && "name".equals(atts.getValue(i))) {
+            System.out.println(atts.getValue(i + 1));
+            if (streetHouses.get(atts.getValue(i + 1)) != null) {
+              countHouse = streetHouses.get(atts.getValue(i + 1)).countHouse + 1;
+              countRepeat = streetHouses.get(atts.getValue(i + 1)).countPiece + 1;
+            } else {
+              countHouse = 0;
+              countRepeat = 1;
+            }
+            streetHouses.put(atts.getValue(i + 1), new StreetData(countHouse, countRepeat));
           }
-          
-//          if ("k".equals(atts.getLocalName(i)) && isWay
-//              && "name".equals(atts.getValue(i))) {
-//            if (streetHouses.get(atts.getValue(i)) != null) {
-//              countHouse = streetHouses.get(atts.getValue(i)).countHouse;
-//              countRepeat = streetHouses.get(atts.getValue(i)).countPiece;
-//            } else {
-//              countHouse = 0;
-//              countRepeat = 1;
-//            }
-//            streetHouses.put(atts.getValue(i), new StreetData(countHouse, countRepeat));
-//            isWay = false;
-//          } 
+          else if (isWay && "addr:street".equals(atts.getValue(i))) {
+            streetRepeat = atts.getValue(i + 1);
+            if (streetHouses.get(streetRepeat) != null) {
+              countHouse = streetHouses.get(streetRepeat).countHouse;
+              countRepeat = streetHouses.get(streetRepeat).countPiece + 1;
+              streetHouses.put(streetRepeat, new StreetData(countHouse, countRepeat));
+            }
+          }
+          else if (isWay && "building".equals(atts.getValue(i))) {
+            if (streetHouses.get(streetRepeat) != null) {
+              countHouse = streetHouses.get(streetRepeat).countHouse + 1;
+              countRepeat = streetHouses.get(streetRepeat).countPiece;
+              streetHouses.put(atts.getValue(i + 1), new StreetData(countHouse, countRepeat));
+            }
+            else {
+              System.out.println("Сообщение с id дома");
+            }
+          }
           
           if ("bus_stop".equals(atts.getValue(i))) {
             isBusStop = true;
-            System.out.println(atts.getValue(i));
           }
         }
       }
@@ -88,10 +103,10 @@ public class XmlHandler implements ContentHandler {
   }
 
   public void endElement(String uri, String localName, String qName) throws SAXException {
-//    if (qName.equals("name")) {
-//      busStop = false;
-//    }
-//    System.out.printf("[L%d] End element <%s>\n", loc.getLineNumber(), qName);
+    if (qName.equals("way")) {
+      isWay = false;
+      isHighway = false;
+    }
   }
 
   public void characters(char[] ch, int start, int length) throws SAXException {
