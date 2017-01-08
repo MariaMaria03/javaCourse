@@ -16,6 +16,8 @@ public class XmlHandler implements ContentHandler {
   public List<String> names = new ArrayList(10);
   public List<String> busStops = new ArrayList();
   public Map<String,StreetData> streetHouses = new HashMap<>();
+  public Map<String, String> idHouses = new HashMap<>();
+  String curIdWay = "";
 
   public XmlHandler() {
   }
@@ -28,75 +30,61 @@ public class XmlHandler implements ContentHandler {
   }
 
   public void startDocument() throws SAXException {
-    System.out.println("[[[Start document");
+    System.out.println("[Start document");
   }
 
   public void endDocument() throws SAXException {
-    System.out.println("]]]End document");
+    System.out.println("]End document");
     busStops.forEach((name) -> {
       System.out.println(name);
+    });
+    
+    idHouses.forEach((id, str) -> {
+      if (streetHouses.keySet().contains(str)) {
+        streetHouses.get(str).housesUp();
+      }
+      else {
+        System.out.println(id);
+      }
     });
     
     streetHouses.forEach((nameStr, obj) -> {
       System.out.println(nameStr + " - " + obj.toString());
     });
     
+    
   }
 
   public void startElement(String uri, String localName, String qName, Attributes atts)
       throws SAXException {
-    int countHouse = 0;
-    int countRepeat = 0;
-    String streetRepeat = "";
-    int n = atts.getLength();
-
+    String value = atts.getValue("v");
+    String key = atts.getValue("k");
     if (qName.equals("tag")) {
-      if (n > 0) {
-        for (int i = 0; i < n; i++) {
-          if (isBusStop && "name".equals(atts.getValue(i))) {
-            busStops.add(atts.getValue(i + 1));
-            isBusStop = false;
-          }
-          else if ("highway".equals(atts.getValue(i)) && isWay) {
-            isHighway = true;
-          }
-          else if (isHighway && isWay && "name".equals(atts.getValue(i))) {
-            System.out.println(atts.getValue(i + 1));
-            if (streetHouses.get(atts.getValue(i + 1)) != null) {
-              countHouse = streetHouses.get(atts.getValue(i + 1)).countHouse + 1;
-              countRepeat = streetHouses.get(atts.getValue(i + 1)).countPiece + 1;
-            } else {
-              countHouse = 0;
-              countRepeat = 1;
-            }
-            streetHouses.put(atts.getValue(i + 1), new StreetData(countHouse, countRepeat));
-          }
-          else if (isWay && "addr:street".equals(atts.getValue(i))) {
-            streetRepeat = atts.getValue(i + 1);
-            if (streetHouses.get(streetRepeat) != null) {
-              countHouse = streetHouses.get(streetRepeat).countHouse;
-              countRepeat = streetHouses.get(streetRepeat).countPiece + 1;
-              streetHouses.put(streetRepeat, new StreetData(countHouse, countRepeat));
-            }
-          }
-          else if (isWay && "building".equals(atts.getValue(i))) {
-            if (streetHouses.get(streetRepeat) != null) {
-              countHouse = streetHouses.get(streetRepeat).countHouse + 1;
-              countRepeat = streetHouses.get(streetRepeat).countPiece;
-              streetHouses.put(atts.getValue(i + 1), new StreetData(countHouse, countRepeat));
-            }
-            else {
-              System.out.println("Сообщение с id дома");
-            }
-          }
-          
-          if ("bus_stop".equals(atts.getValue(i))) {
-            isBusStop = true;
-          }
+      if (isBusStop && "name".equals(key)) {
+        busStops.add(value);
+        isBusStop = false;
+      }
+      else if ("highway".equals(key) && isWay) {
+        isHighway = true;
+      }
+      else if (isHighway && isWay && "name".equals(key)) {
+        StreetData strH = streetHouses.get(value);
+        if (strH == null) {
+          strH = new StreetData(0, 0);
+          streetHouses.put(value, strH);
         }
+        strH.piecesUp();
+      }
+      else if (isWay && "addr:street".equals(key)) {
+        idHouses.put(curIdWay, value);
+      }
+
+      if ("bus_stop".equals(value)) {
+        isBusStop = true;
       }
     }
     else if (qName.equals("way")) {
+      curIdWay = atts.getValue("id");
       isWay = true;
     }
     

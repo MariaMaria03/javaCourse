@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.w3c.dom.Document;
 import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,11 +33,12 @@ public class JavaApplication7 {
   /**
    * @param args the command line arguments
    */
-  public static void main(String[] args) throws SAXException, IOException {
+  public static void main(String[] args) throws SAXException, IOException, JAXBException {
     //Document doc = readXmlToDOMDocument("clouds.svg");
     //processDocument(doc);
     //saveDemo(doc);
-    new SaxProcess().process("UfaCenterSmall.xml", "osm.xsd");
+//    new SaxProcess().process("UfaCenterSmall.xml", "osm.xsd");
+    new JaxbLab("UfaCenterSmall.xml");
   }
   
   JavaApplication7(String fileName) throws SAXException {

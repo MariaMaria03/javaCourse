@@ -8,6 +8,10 @@ public class StreetData {
     countPiece = cP;
   }
   
+  public void housesUp() {countHouse++;}
+  
+  public void piecesUp() {countPiece++;}
+  
   @Override
   public String toString() {
     return "Количество домов: " + countHouse + " ; Количество кусков: " + countPiece; 
