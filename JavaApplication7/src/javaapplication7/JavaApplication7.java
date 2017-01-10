@@ -37,8 +37,8 @@ public class JavaApplication7 {
     //Document doc = readXmlToDOMDocument("clouds.svg");
     //processDocument(doc);
     //saveDemo(doc);
-//    new SaxProcess().process("UfaCenterSmall.xml", "osm.xsd");
-    new JaxbLab("UfaCenterSmall.xml");
+    new SaxProcess().process("UfaCenterSmall.xml", "osm.xsd");
+    //new JaxbLab("UfaCenterSmall.xml");
   }
   
   JavaApplication7(String fileName) throws SAXException {
