@@ -16,15 +16,20 @@ public class BusinessCenter {
   }
   
   public boolean enterLift(Visitor v) {
+    long time = System.currentTimeMillis();
+    long rest = 1000;
     synchronized(this) {
       while (!liftFree) {
+        System.out.println(getTime() + "Посетитель " + v.getNum() + " ждет лифта");
         try {
-          System.out.println(getTime() + "Посетитель " + v.getNum() + " ждет лифта");
-            this.wait(1000);        
+          this.wait(rest);
+          if ((System.currentTimeMillis() - time) >= 1000) {
             return false;
+          }
+          rest = rest - (System.currentTimeMillis() - time);
         }
         catch(InterruptedException ex) { 
-          
+          System.out.println("err");
         }
       }
       liftFree = false;
@@ -34,8 +39,11 @@ public class BusinessCenter {
   }
   
   public void exitFromLift(Visitor v) {
-    liftFree = true;
-    System.out.println(getTime() + "Посетитель " + v.getNum() + " вышел из лифта");
+    synchronized (this) {
+      liftFree = true;
+      System.out.println(getTime() + "Посетитель " + v.getNum() + " вышел из лифта");
+      this.notify();
+    }
   }
   
   public void moveLift(int targetFloor, boolean isEmpty) {
@@ -59,7 +67,7 @@ public class BusinessCenter {
         try {
           this.wait();
         } catch (InterruptedException ex) {
-
+            System.out.println("err");
         }
       }
       controlFree = false;
@@ -67,8 +75,11 @@ public class BusinessCenter {
   }
   
   public void exitFromControl(Visitor v) {
-    controlFree = true;
-    System.out.println(getTime() + "Посетитель " + v.getNum() + " показал документы");
+    synchronized (this) {
+      controlFree = true;
+      System.out.println(getTime() + "Посетитель " + v.getNum() + " показал документы");
+      this.notify();
+    }
   }
   
   public String getTime() {

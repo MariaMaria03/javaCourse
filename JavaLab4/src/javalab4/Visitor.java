@@ -57,9 +57,6 @@ public class Visitor implements Runnable {
        System.out.println(lift.getTime() + "Посетитель " + num + " вошел в лифт, едет на " + f + " этаж");
        lift.moveLift(f, false);
        lift.exitFromLift(this);
-       synchronized (lift) {
-         lift.notify();
-       }
      }
      else {
        System.out.println(lift.getTime() + "Посетитель " + num + " идет пешком на " + f + " этаж");
@@ -82,9 +79,6 @@ public class Visitor implements Runnable {
       Logger.getLogger(Visitor.class.getName()).log(Level.SEVERE, null, ex);
     }
     control.exitFromControl(this);
-    synchronized (control) {
-      control.notify();
-    }
   } 
 }
 
